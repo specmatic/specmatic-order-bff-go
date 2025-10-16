@@ -30,7 +30,7 @@ func StartDomainService(t *testing.T, env *TestEnvironment) (testcontainers.Cont
 	}
 
 	req := testcontainers.ContainerRequest{
-		Image:        "znsio/specmatic",
+		Image:        "specmatic/specmatic",
 		ExposedPorts: []string{port.Port() + "/tcp"},
 		Networks: []string{
 			env.BffTestNetwork.Name,
@@ -77,7 +77,7 @@ func StartKafkaMock(t *testing.T, env *TestEnvironment) (testcontainers.Containe
 	networkName := env.BffTestNetwork.Name
 
 	req := testcontainers.ContainerRequest{
-		Image:        "znsio/specmatic-kafka",
+		Image:        "specmatic/specmatic-kafka",
 		ExposedPorts: []string{port.Port() + "/tcp", env.Config.KafkaAPIPort + "/tcp"},
 		Networks: []string{
 			networkName,
@@ -85,15 +85,16 @@ func StartKafkaMock(t *testing.T, env *TestEnvironment) (testcontainers.Containe
 		NetworkAliases: map[string][]string{
 			networkName: {env.Config.KafkaHost},
 		},
-		Cmd: []string{"--config=/specmatic.yaml", "--mock-server-api-port=" + env.Config.KafkaAPIPort},
+		Cmd: []string{"virtualize"},
 		Mounts: testcontainers.Mounts(
 			testcontainers.BindMount(filepath.Join(pwd, "specmatic.yaml"), "/usr/src/app/specmatic.yaml"),
 		),
 		Env: map[string]string{
 			"KAFKA_EXTERNAL_HOST": env.Config.KafkaHost,
 			"KAFKA_EXTERNAL_PORT": env.Config.KafkaPort,
+			"API_SERVER_PORT": env.Config.KafkaAPIPort,
 		},
-		WaitingFor: wait.ForLog("Listening on topics: (product-queries)").WithStartupTimeout(2 * time.Minute),
+		WaitingFor: wait.ForLog("KafkaMock has started").WithStartupTimeout(2 * time.Minute),
 	}
 
 	kafkaC, err := testcontainers.GenericContainer(env.Ctx, testcontainers.GenericContainerRequest{
@@ -142,9 +143,11 @@ func StartBFFService(t *testing.T, env *TestEnvironment) (testcontainers.Contain
 	contextPath := "."
 
 	req := testcontainers.ContainerRequest{
+    Name: "specmatic-order-bff-go",
 		FromDockerfile: testcontainers.FromDockerfile{
 			Context:    contextPath,
 			Dockerfile: dockerfilePath,
+			PrintBuildLog: true,
 		},
 		Env: map[string]string{
 			"DOMAIN_SERVER_PORT": env.Config.BackendPort,
@@ -195,7 +198,7 @@ func RunTestContainer(env *TestEnvironment) (string, error) {
 	}
 
 	req := testcontainers.ContainerRequest{
-		Image: "znsio/specmatic",
+		Image: "specmatic/specmatic",
 		Env: map[string]string{
 			"SPECMATIC_GENERATIVE_TESTS": "true",
 			"FILTER":"'/health'",
@@ -239,34 +242,18 @@ func RunTestContainer(env *TestEnvironment) (string, error) {
 	return buf.String(), nil
 }
 
-// func SetKafkaExpectations(env *TestEnvironment) error {
-// 	endpoint := "/_expectations"
-// 	url := fmt.Sprintf("http://%s:%s%s", env.KafkaAPIHost, env.KafkaDynamicAPIPort, endpoint)
-
-// 	postBody := []byte(fmt.Sprintf(`[{"topic": "product-queries", "count": %d}]`, env.ExpectedMessageCount))
-
-// 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(postBody))
-// 	if err != nil {
-// 		fmt.Println("Error making request:", err)
-// 		return nil
-// 	}
-// 	defer resp.Body.Close()
-
-// 	_, err = ioutil.ReadAll(resp.Body)
-// 	if err != nil {
-// 		fmt.Println("Error reading response:", err)
-// 		return nil
-// 	}
-
-// 	return nil
-// }
-
 func SetKafkaExpectations(env *TestEnvironment) error {
 	client := resty.New()
 
+  body := fmt.Sprintf(`{
+			"expectations": [
+				{ "topic": "product-queries", "count": %d }
+			]
+		}`, env.ExpectedMessageCount)
+
 	_, err := client.R().
 		SetHeader("Content-Type", "application/json").
-		SetBody(fmt.Sprintf(`[{"topic": "product-queries", "count": %d}]`, env.ExpectedMessageCount)).
+		SetBody(body).
 		Post(fmt.Sprintf("http://%s:%s/_expectations", env.KafkaAPIHost, env.KafkaDynamicAPIPort))
 
 	return err
@@ -277,7 +264,7 @@ func VerifyKafkaExpectations(env *TestEnvironment) error {
 
 	resp, err := client.R().
 		SetHeader("Content-Type", "application/json").
-		Post(fmt.Sprintf("http://%s:%s/_expectations/verifications", env.KafkaAPIHost, env.KafkaDynamicAPIPort))
+    Get(fmt.Sprintf("http://%s:%s/_expectations/verification_status", env.KafkaAPIHost, env.KafkaDynamicAPIPort))
 
 	if err != nil {
 		return err
