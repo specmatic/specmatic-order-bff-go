@@ -3,7 +3,7 @@ module github.com/znsio/specmatic-order-bff-go
 go 1.22.4
 
 require (
-	github.com/docker/go-connections v0.5.0
+	github.com/docker/go-connections v0.6.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-resty/resty/v2 v2.14.0
 	github.com/segmentio/kafka-go v0.4.47
