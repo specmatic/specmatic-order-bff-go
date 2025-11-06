@@ -1,7 +1,7 @@
 # Specmatic Sample: GO BFF calling Domain API
 
 * [Specmatic Website](https://specmatic.io)
-* [Specmatic Documenation](https://specmatic.io/documentation.html)
+* [Specmatic Documenation](https://docs.specmatic.io)
 
 This sample project demonstrates how we can practice contract-driven development and contract testing in a GO application that depends on an external domain service and Kafka. Here, Specmatic is used to stub calls to domain API service based on its OpenAPI spec and mock Kafka based on its AsyncAPI spec.
 
