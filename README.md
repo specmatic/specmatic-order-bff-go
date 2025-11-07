@@ -21,6 +21,7 @@ A typical web application might look like this. We can use Specmatic to practice
 
 ## Tech
 1. Go (Gin)
+2. Docker Desktop
 
 ## Contract testing (Run Tests)
 ### Using test containers (preferred)
