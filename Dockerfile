@@ -1,5 +1,5 @@
    # Use the official Golang image as the base image
-   FROM golang:1.25.4-alpine
+   FROM golang:1.25.5-alpine
 
    # Install necessary tools including make
    RUN apk add --no-cache make
