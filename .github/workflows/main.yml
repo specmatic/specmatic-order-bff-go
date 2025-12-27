@@ -16,10 +16,10 @@ jobs:
 
     steps:
     - name: Check out code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Set up Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v6
       with:
         go-version: '1.25'
 
@@ -56,7 +56,7 @@ jobs:
           --repo-url ${{ github.event.repository.html_url }}
 
     - name: Upload HTML Test Report
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: ${{ matrix.os }}-html-report
         path: build/reports/specmatic/html
