@@ -12,7 +12,7 @@ Here is the [AsyncAPI spec](https://github.com/specmatic/specmatic-order-contrac
 ## Definitions
 * BFF: Backend for Front End
 * Domain API: API managing the domain model
-* Specmatic Stub/Mock Server: Create a server that can act as a real service using its OpenAPI or AsyncAPI spec
+* specmatic mock/Mock Server: Create a server that can act as a real service using its OpenAPI or AsyncAPI spec
 
 ## Background
 A typical web application might look like this. We can use Specmatic to practice contract-driven development and test all the components mentioned below. In this sample project, we look at how to do this for GO BFF which is dependent on Domain API Service and Kafka demonstrating both OpenAPI and AsyncAPI support in specmatic.

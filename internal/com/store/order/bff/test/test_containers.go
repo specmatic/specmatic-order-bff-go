@@ -35,14 +35,14 @@ func StartDomainService(t *testing.T, env *TestEnvironment) (testcontainers.Cont
 		Networks: []string{
 			env.BffTestNetwork.Name,
 		},
-		Cmd: []string{"stub"},
+		Cmd: []string{"mock"},
 		Mounts: testcontainers.Mounts(
 			testcontainers.BindMount(filepath.Join(pwd, "specmatic.yaml"), "/usr/src/app/specmatic.yaml"),
 		),
 		NetworkAliases: map[string][]string{
 			env.BffTestNetwork.Name: {env.Config.BackendHost},
 		},
-		WaitingFor: wait.ForLog("Stub server is running"),
+		WaitingFor: wait.ForLog("Mock server is running"),
 	}
 
 	t.Log("Domain Container created")
@@ -85,7 +85,7 @@ func StartKafkaMock(t *testing.T, env *TestEnvironment) (testcontainers.Containe
 		NetworkAliases: map[string][]string{
 			networkName: {env.Config.KafkaHost},
 		},
-		Cmd: []string{"virtualize"},
+		Cmd: []string{"mock"},
 		Mounts: testcontainers.Mounts(
 			testcontainers.BindMount(filepath.Join(pwd, "specmatic.yaml"), "/usr/src/app/specmatic.yaml"),
 		),

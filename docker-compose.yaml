@@ -34,7 +34,7 @@ services:
       - "8090:8090"
     volumes:
       - ./specmatic.json:/specmatic.yaml
-    command: stub --config=/specmatic.yaml --port=8090
+    command: mock --config=/specmatic.yaml --port=8090
 
   specmatic-kafka:
     image: specmatic/specmatic-kafka
