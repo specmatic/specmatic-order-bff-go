@@ -5,7 +5,7 @@ go 1.24.0
 require (
 	github.com/docker/go-connections v0.6.0
 	github.com/gin-gonic/gin v1.11.0
-	github.com/go-resty/resty/v2 v2.17.1
+	github.com/go-resty/resty/v2 v2.17.2
 	github.com/segmentio/kafka-go v0.4.49
 	github.com/testcontainers/testcontainers-go v0.39.0
 	github.com/tidwall/gjson v1.18.0
