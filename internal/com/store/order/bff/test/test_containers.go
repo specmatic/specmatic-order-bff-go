@@ -199,6 +199,25 @@ func RunTestContainer(env *TestEnvironment) (string, error) {
 	return buf.String(), nil
 }
 
+func StopSpecmaticMock(t *testing.T, env *TestEnvironment) {
+	if env.SpecmaticMockContainer == nil {
+		return
+	}
+
+	stopTimeout := 2 * time.Minute
+	env.SpecmaticMockContainer.Stop(env.Ctx, &stopTimeout)
+
+	logReader, err := env.SpecmaticMockContainer.Logs(env.Ctx)
+	if err == nil {
+		var logBuf bytes.Buffer
+		io.Copy(&logBuf, logReader)
+		logReader.Close()
+		t.Logf("=== Specmatic mock shutdown logs ===\n%s", logBuf.String())
+	}
+
+	env.SpecmaticMockContainer.Terminate(env.Ctx)
+}
+
 func SetKafkaExpectations(env *TestEnvironment) error {
 	client := resty.New()
 

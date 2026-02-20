@@ -90,9 +90,7 @@ func tearDown(t *testing.T, env *test.TestEnvironment) {
 		} else {
 			t.Log("Kafka expectations met successfully")
 		}
-		if err := env.SpecmaticMockContainer.Terminate(env.Ctx); err != nil {
-			t.Logf("Failed to terminate specmatic mock container: %v", err)
-		}
+		test.StopSpecmaticMock(t, env)
 	}
 }
 
