@@ -10,13 +10,14 @@ services:
     entrypoint: ["tail", "-f", "/dev/null"]
 
   specmatic-contract-test:
-    image: specmatic/specmatic
+    image: specmatic/enterprise
     container_name: specmatic-contract-test
     depends_on:
       - go-app
     volumes:
-      - ./specmatic.yaml:/specmatic.yaml
-    command: test --config=/specmatic.yaml --testBaseURL=http://go-app:8080
+      - ./specmatic.yaml:/usr/src/app/specmatic.yaml
+      - ./build/reports/specmatic:/usr/src/app/build/reports/specmatic
+    command: test
 
   go-app:
     build: .
@@ -28,18 +29,20 @@ services:
       - specmatic-kafka
 
   order-api-mock:
-    image: specmatic/specmatic
+    image: specmatic/enterprise
     container_name: order-api-mock
     ports:
       - "8090:8090"
     volumes:
-      - ./specmatic.json:/specmatic.yaml
-    command: stub --config=/specmatic.yaml --port=8090
+      - ./specmatic.yaml:/usr/src/app/specmatic.yaml
+      - ./build/reports/specmatic:/usr/src/app/build/reports/specmatic
+    command: mock
 
   specmatic-kafka:
-    image: specmatic/specmatic-kafka
+    image: specmatic/enterprise
     container_name: specmatic-kafka
     ports:
-      - "9093:9093"
+      - "9092:9092"
     volumes:
-      - ./specmatic.json:/usr/src/app/specmatic.yaml
+      - ./specmatic.yaml:/usr/src/app/specmatic.yaml
+      - ./build/reports/specmatic:/usr/src/app/build/reports/specmatic

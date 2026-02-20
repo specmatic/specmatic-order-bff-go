@@ -14,12 +14,11 @@ var authToken = "API-TOKEN-SPEC"
 
 func TestContract(t *testing.T) {
 	env := setUpEnv(t)
+	defer tearDown(t, env)
 
 	setUp(t, env)
 
 	runTests(t, env)
-
-	defer tearDown(t, env)
 }
 
 func setUpEnv(t *testing.T) *test.TestEnvironment {
@@ -48,19 +47,13 @@ func setUpEnv(t *testing.T) *test.TestEnvironment {
 func setUp(t *testing.T, env *test.TestEnvironment) {
 	var err error
 
-	printHeader(t, 1, "Starting Specmatic HTTP Stub Server to emulate domain server")
-	env.DomainServiceContainer, env.DomainServiceDynamicPort, err = test.StartDomainService(t, env)
+	printHeader(t, 1, "Starting Specmatic Mock (HTTP Stub + Kafka Mock)")
+	env.SpecmaticMockContainer, err = test.StartSpecmaticMock(t, env)
 	if err != nil {
-		t.Fatalf("could not start domain service container: %v", err)
+		t.Fatalf("could not start specmatic mock container: %v", err)
 	}
 
-	printHeader(t, 2, "Starting Kafka Mock")
-	env.KafkaServiceContainer, env.KafkaServiceDynamicPort, err = test.StartKafkaMock(t, env)
-	if err != nil {
-		t.Fatalf("could not start Kafka service container: %v", err)
-	}
-
-	printHeader(t, 3, "Starting BFF Service")
+	printHeader(t, 2, "Starting BFF Service")
 	env.BffServiceContainer, env.BffServiceDynamicPort, err = test.StartBFFService(t, env)
 	if err != nil {
 		t.Fatalf("could not start bff service container: %v", err)
@@ -68,7 +61,7 @@ func setUp(t *testing.T, env *test.TestEnvironment) {
 }
 
 func runTests(t *testing.T, env *test.TestEnvironment) {
-	printHeader(t, 4, "Starting tests")
+	printHeader(t, 3, "Starting tests")
 	testLogs, err := test.RunTestContainer(env)
 
 	if (err != nil) && !strings.Contains(err.Error(), "code 0") {
@@ -88,20 +81,17 @@ func tearDown(t *testing.T, env *test.TestEnvironment) {
 		}
 	}
 
-	if env.KafkaServiceContainer != nil {
+	if env.SpecmaticMockContainer != nil {
+		t.Log("Verifying Kafka expectations...")
 		err := test.VerifyKafkaExpectations(env)
 		if err != nil {
 			t.Logf("Kafka expectations were not met: %s", err)
 			t.Fail()
+		} else {
+			t.Log("Kafka expectations met successfully")
 		}
-		if err := env.KafkaServiceContainer.Terminate(env.Ctx); err != nil {
-			t.Logf("Failed to terminate Kafka container: %v", err)
-		}
-	}
-
-	if env.DomainServiceContainer != nil {
-		if err := env.DomainServiceContainer.Terminate(env.Ctx); err != nil {
-			t.Logf("Failed to terminate stub container: %v", err)
+		if err := env.SpecmaticMockContainer.Terminate(env.Ctx); err != nil {
+			t.Logf("Failed to terminate specmatic mock container: %v", err)
 		}
 	}
 }
