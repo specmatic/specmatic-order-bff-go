@@ -28,19 +28,13 @@ jobs:
         go mod tidy
         go mod download
 
-    - name: Setup Testcontainers Cloud Client
-      uses: atomicjar/testcontainers-cloud-setup-action@v1
-      with:
-        token: ${{ secrets.TC_CLOUD_TOKEN }}
-        wait: true
-
-    - name: Run Contract Test
-      run: go test contract_test.go -v -count=1
-
     - name: Save Specmatic license
       run: |
         mkdir -p ~/.specmatic
         echo "${{ secrets.SPECMATIC_LICENSE_KEY }}" > ~/.specmatic/specmatic-license.txt
+
+    - name: Run Contract Test
+      run: go test contract_test.go -v -count=1
 
     - name: Run Specmatic Insights Build Reporter
       run: |
