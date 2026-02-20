@@ -24,8 +24,8 @@ func StartSpecmaticMock(t *testing.T, env *TestEnvironment) (testcontainers.Cont
 		return nil, fmt.Errorf("error getting current directory: %v", err)
 	}
 
-	localReportDirectory := filepath.Join(pwd, "build", "reports")
-	if err := os.MkdirAll(localReportDirectory, 0755); err != nil {
+	localSpecmaticReportDirectory := filepath.Join(pwd, "build", "reports", "specmatic")
+	if err := os.MkdirAll(localSpecmaticReportDirectory, 0755); err != nil {
 		return nil, fmt.Errorf("error creating reports directory: %v", err)
 	}
 
@@ -45,7 +45,7 @@ func StartSpecmaticMock(t *testing.T, env *TestEnvironment) (testcontainers.Cont
 		Cmd: []string{"mock"},
 		Mounts: testcontainers.Mounts(
 			testcontainers.BindMount(filepath.Join(pwd, "specmatic.yaml"), "/usr/src/app/specmatic.yaml"),
-			testcontainers.BindMount(localReportDirectory, "/usr/src/app/build/reports/specmatic"),
+			testcontainers.BindMount(localSpecmaticReportDirectory, "/usr/src/app/build/reports/specmatic"),
 		),
 		Env: map[string]string{
 			"KAFKA_EXTERNAL_HOST": env.Config.KafkaHost,
