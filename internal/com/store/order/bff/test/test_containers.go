@@ -2,6 +2,7 @@ package test
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -15,7 +16,6 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
-	"github.com/tidwall/gjson"
 )
 
 func StartSpecmaticMock(t *testing.T, env *TestEnvironment) (testcontainers.Container, error) {
@@ -75,8 +75,8 @@ func StartSpecmaticMock(t *testing.T, env *TestEnvironment) (testcontainers.Cont
 	}
 	env.KafkaAPIHost = kafkaAPIHost
 
-	if err := SetKafkaExpectations(env); err != nil {
-		t.Logf("failed to set Kafka expectations: %v", err)
+	if err := SnapshotKafkaExpectations(env); err != nil {
+		t.Logf("failed to snapshot for kafka expectations: %v", err)
 	}
 
 	logReader, err := mockC.Logs(env.Ctx)
@@ -218,38 +218,57 @@ func StopSpecmaticMock(t *testing.T, env *TestEnvironment) {
 	env.SpecmaticMockContainer.Terminate(env.Ctx)
 }
 
-func SetKafkaExpectations(env *TestEnvironment) error {
+func SnapshotKafkaExpectations(env *TestEnvironment) error {
 	client := resty.New()
 
-  body := fmt.Sprintf(`{
-			"expectations": [
-				{ "topic": "product-queries", "count": %d }
-			]
-		}`, env.ExpectedMessageCount)
+	url := fmt.Sprintf("http://%s:%s/_specmatic/snapshot", env.KafkaAPIHost, env.KafkaDynamicAPIPort)
 
-	_, err := client.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(body).
-		Post(fmt.Sprintf("http://%s:%s/_expectations", env.KafkaAPIHost, env.KafkaDynamicAPIPort))
+	fmt.Printf("Capturing Kafka snapshot at %s\n", url)
+	resp, err := client.R().
+		Post(url)
 
-	return err
+	if err != nil {
+		return fmt.Errorf("error capturing Kafka snapshot: %w", err)
+	}
+
+	fmt.Printf("Kafka snapshot response status: %s\n", resp.Status())
+	fmt.Printf("Kafka snapshot response body: %s\n", string(resp.Body()))
+	if resp.IsError() {
+		return fmt.Errorf("unexpected response capturing Kafka snapshot: %s", resp.Status())
+	}
+
+	return nil
 }
 
 func VerifyKafkaExpectations(env *TestEnvironment) error {
 	client := resty.New()
+	url := fmt.Sprintf("http://%s:%s/_specmatic/verify?channels=product-queries", env.KafkaAPIHost, env.KafkaDynamicAPIPort)
 
+	fmt.Printf("Verifying Kafka expectations at %s\n", url)
 	resp, err := client.R().
-		SetHeader("Content-Type", "application/json").
-    Get(fmt.Sprintf("http://%s:%s/_expectations/verification_status", env.KafkaAPIHost, env.KafkaDynamicAPIPort))
+		Get(url)
 
 	if err != nil {
 		return err
 	}
 
-	if !gjson.GetBytes(resp.Body(), "success").Bool() {
-		return fmt.Errorf("verification failed: %v", gjson.GetBytes(resp.Body(), "errors").Array())
+	fmt.Printf("Kafka verification response status: %s\n", resp.Status())
+	fmt.Printf("Kafka verification response body: %s\n", string(resp.Body()))
+
+	counts := map[string]int{}
+	if err := json.Unmarshal(resp.Body(), &counts); err != nil {
+		return fmt.Errorf("failed to parse Kafka verification response: %w", err)
 	}
 
-	fmt.Println("Kafka mock expectations were met successfully.")
+	actualCount, ok := counts["product-queries"]
+	if !ok {
+		return fmt.Errorf("Kafka verification response did not include product-queries count: %v", counts)
+	}
+
+	if actualCount != env.ExpectedMessageCount {
+		return fmt.Errorf("Kafka message count mismatch for product-queries: expected %d, got %d", env.ExpectedMessageCount, actualCount)
+	}
+
+	fmt.Printf("Kafka message count matched expected value: %d\n", actualCount)
 	return nil
 }
