@@ -31,6 +31,7 @@ func StartSpecmaticMock(t *testing.T, env *TestEnvironment) (testcontainers.Cont
 
 	networkName := env.BffTestNetwork.Name
 
+
 	req := testcontainers.ContainerRequest{
 		Image: "specmatic/enterprise",
 		ExposedPorts: []string{
