@@ -16,6 +16,14 @@ type OrderController struct {
 func (oc *OrderController) CreateOrder(c *gin.Context) {
 	var newOrder models.OrderRequest
 
+	if c.ContentType() != "application/json" {
+        c.JSON(http.StatusUnsupportedMediaType, gin.H{
+            "error": "Unsupported Media Type",
+            "message": "Content-Type must be application/json",
+        })
+        return
+    }
+
 	// Bind JSON to NewProduct Model (struct) and validate the request based on model rules.
 	if err := c.ShouldBindJSON(&newOrder); err != nil {
 		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
